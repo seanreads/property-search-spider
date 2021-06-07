@@ -78,21 +78,16 @@ end
 # # Query database and get parcel ids for municipality that are not already in file
 properties = PropertyReassessment.where(taxdist: '1').where.not(parid: parids)
 
-p properties.inspect
+if !properties.empty?
+  PARCEL_IDS = properties.map{|property| property.parid }
 
-p properties.count
+  p "Scraping #{PARCEL_IDS.count} properties..."
+  start_time = Time.now
 
+  PropertySearchSpider.crawl!
 
-# if !properties.empty?
-#   PARCEL_IDS = properties.map{|property| property.parid }
-
-#   p "Scraping #{PARCEL_IDS.count} properties..."
-#   start_time = Time.now
-
-#   PropertySearchSpider.crawl!
-
-#   duration = Time.now - start_time
-#   p "Done: #{duration} seconds"
-# else
-#   p "No properties to find."
-# end
+  duration = Time.now - start_time
+  p "Done: #{duration} seconds"
+else
+  p "No properties to find."
+end
