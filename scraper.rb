@@ -46,20 +46,22 @@ class PropertySearchSpider < Kimurai::Base
       property[:assessment_date] = response.xpath('//table[@id="Original Current Year Assessment"]/tbody/tr[2]/td[3]').inner_text
       property[:assessment_reason_for_change] = response.xpath('//table[@id="Original Current Year Assessment"]/tbody/tr[2]/td[4]').inner_text
       property[:assessment_comment] = response.xpath('//table[@id="Original Current Year Assessment"]/tbody/tr[2]/td[5]').inner_text
-      CSV.open(DATA_FILE, "a+") do |csv|
-        now = Time.now.utc
-        csv << [ property[:parid], property[:site_location], property[:map_number], 
-                property[:municipality], property[:school_district], property[:property_type], 
-                property[:owner1], property[:owner2],
-                property[:last_sale_date], property[:last_sale_price], property[:type_of_assessment], 
-                property[:assessment_value], property[:assessment_date],property[:assessment_reason_for_change], 
-                property[:assessment_comment], now, now ]
+      unless property[:parid].blank?
+        CSV.open(DATA_FILE, "a+") do |csv|
+          now = Time.now.utc
+          csv << [ property[:parid], property[:site_location], property[:map_number], 
+                  property[:municipality], property[:school_district], property[:property_type], 
+                  property[:owner1], property[:owner2],
+                  property[:last_sale_date], property[:last_sale_price], property[:type_of_assessment], 
+                  property[:assessment_value], property[:assessment_date],property[:assessment_reason_for_change], 
+                  property[:assessment_comment], now, now ]
+        end
       end
     end
   end
 end
 
-DATA_FILE = 'data/properties.csv'
+DATA_FILE = 'data/aldan-borough-properties.csv'
 parids = []
 if !File.exist?(DATA_FILE)
   CSV.open(DATA_FILE, "w") do |csv|
@@ -74,18 +76,23 @@ else
 end
 
 # # Query database and get parcel ids for municipality that are not already in file
-properties = PropertyReassessment.where.not(parid: parids)
+properties = PropertyReassessment.where(taxdist: '1').where.not(parid: parids)
 
-if !properties.empty?
-  PARCEL_IDS = properties.map{|property| property.parid }
+p properties.inspect
 
-  p "Scraping #{PARCEL_IDS.count} properties..."
-  start_time = Time.now
+p properties.count
 
-  PropertySearchSpider.crawl!
 
-  duration = Time.now - start_time
-  p "Done: #{duration} seconds"
-else
-  p "No properties to find."
-end
+# if !properties.empty?
+#   PARCEL_IDS = properties.map{|property| property.parid }
+
+#   p "Scraping #{PARCEL_IDS.count} properties..."
+#   start_time = Time.now
+
+#   PropertySearchSpider.crawl!
+
+#   duration = Time.now - start_time
+#   p "Done: #{duration} seconds"
+# else
+#   p "No properties to find."
+# end
